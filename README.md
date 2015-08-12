@@ -1,6 +1,7 @@
 ##Usage
 
 ###Install
+	
 	npm install gulp-git-branch --save
 	
 ##Example
@@ -11,4 +12,4 @@ SirM.alert('弹出我吧');
 ```
 
 ##API
-## todo
+##todo
