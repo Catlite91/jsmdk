@@ -1,15 +1,15 @@
-##Usage
+## Usage
 
-###Install
+### Install
 	
 	npm install gulp-git-branch --save
 	
-##Example
+## Example
 
 ```javascript
 // 调用对话框
 SirM.alert('弹出我吧');
 ```
 
-##API
-##todo
+## API
+### todo
