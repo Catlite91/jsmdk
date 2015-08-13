@@ -1,1 +1,165 @@
-!function(e,t){var n,i,r={};!function(){function e(e){var t=e.factory,n=function(t){var n=t;return"."===t.charAt(0)&&(n=e.id.slice(0,e.id.lastIndexOf(SEPARATOR))+SEPARATOR+t.slice(2)),i(n)};return e.exports={},delete e.factory,t(n,e.exports,e),e.exports}requireStack=[],inProgressModules={},SEPARATOR=".",n=function(e,t){if(r[e])throw"module "+e+" already defined";r[e]={id:e,factory:t}},i=function(t){if(!r[t])throw"module "+t+" not found";if(t in inProgressModules){var n=requireStack.slice(inProgressModules[t]).join("->")+"->"+t;throw"require\u7684\u751f\u547d\u5468\u671f\u89c6\u56fe: "+n}if(r[t].factory)try{return inProgressModules[t]=requireStack.length,requireStack.push(t),e(r[t])}finally{delete inProgressModules[t],requireStack.pop()}return r[t].exports},n.remove=function(e){delete r[e]},n.moduleMap=r}(),n("tcbridge/exec",function(t,n,i){var r=function(){this.callbackList={}};r.prototype.jsToNative=function(t,n,i){if("string"==typeof t){"function"==typeof n?(i=n,n=null):"object"!=typeof n&&(n=null);var r=(new Date).getTime()+Math.floor(256*Math.random()).toString(16);"function"==typeof i&&(this.callbackList[r]=i);var o={callbackId:r,action:t,data:n||{}},c="jsbridge://";e.location.href=c+JSON.stringify(o)}},r.prototype.nativeToJs=function(e){var t=e.callbackId,n=e.data,i=this.callbackList[t];i&&i.call(null,n),delete this.callbackList[t]},i.exports=new r}),n("tcbridge/init",function(n,i,r){window.console||(window.console={log:new Function}),t.addEventListener("JsBridgeReady",function(){e.TCBridge=n("tcbridge")},!1);var o=t.createEvent("HTMLEvents");o.initEvent("JsBridgeReady",!1,!1),"complete"==document.readyState||"interactive"==document.readyState?t.dispatchEvent(o):document.addEventListener("DOMContentLoaded",function(){t.dispatchEvent(o)},!1)}),n("tcbridge",function(e,t,i){var r=e("tcbridge/exec");i.exports={require:e,define:n,exec:r}}),i("tcbridge/init")}(window,document);
+;(function (win, doc) {    
+    var modules = {},
+        define,
+        require;
+    
+    // 构造模块加载器
+    // 一定程度上遵从amd规范
+    (function() {
+            // 当前正在构造的moduleIds的堆栈信息
+            requireStack = [],
+            // module ID的映射 -> 当前正在构建的模块的堆栈映射的索引
+            inProgressModules = {},
+            SEPARATOR = ".";
+
+        // 构建模块
+        function build(module) {
+            var factory = module.factory,
+                localRequire = function(id) {
+                    var resultantId = id;
+                    //Its a relative path, so lop off the last portion and add the id (minus "./")
+                    if (id.charAt(0) === ".") {
+                        resultantId = module.id.slice(0, module.id.lastIndexOf(SEPARATOR)) + SEPARATOR + id.slice(2);
+                    }
+                    return require(resultantId);
+                };
+            module.exports = {};
+            delete module.factory;
+            factory(localRequire, module.exports, module);
+            return module.exports;
+        }
+         
+        define = function(id, factory) {
+            if (modules[id]) {
+                throw "module " + id + " already defined";
+            }
+
+            modules[id] = {
+                id: id,
+                factory: factory
+            };
+        };
+
+        require = function(id) {
+            if (!modules[id]) {
+                throw "module " + id + " not found";
+            } else if (id in inProgressModules) {
+                var cycle = requireStack.slice(inProgressModules[id]).join('->') + '->' + id;
+                throw "require的生命周期视图: " + cycle;
+            }
+            if (modules[id].factory) {
+                try {
+                    inProgressModules[id] = requireStack.length;
+                    requireStack.push(id);
+                    return build(modules[id]);
+                } finally {
+                    delete inProgressModules[id];
+                    requireStack.pop();
+                }
+            }
+            return modules[id].exports;
+        };
+
+        define.remove = function(id) {
+            delete modules[id];
+        };
+
+        define.moduleMap = modules;
+
+    })();
+
+
+    /**
+     * 执行调用(js -> native, native -> js)
+     */
+    define('tcbridge/exec', function(require, exports, module) {
+        var exec = function() {
+            this.callbackList = {};
+        }
+
+        exec.prototype.jsToNative = function(evt, params, callback) {
+            if (typeof evt != 'string') {
+                return;
+            }
+
+            if (typeof params == 'function') {
+                callback = params;
+                params = null;
+            } else if (typeof params != 'object') {
+                params = null;
+            }
+
+            var callbackId = new Date().getTime() + Math.floor(Math.random() * 256).toString(16);
+
+            if (typeof callback == 'function') {
+                this.callbackList[callbackId] = callback;
+            }
+
+            var msg = {
+                callbackId: callbackId,
+                action: evt,
+                data: params || {}
+            }
+            var iOS_SCHEME = "jsbridge://";
+
+            win.location.href = iOS_SCHEME + JSON.stringify(msg);
+        }
+
+        exec.prototype.nativeToJs = function(params) {
+            var callbackId = params.callbackId,
+                data = params.data,
+                callbackHandler = this.callbackList[callbackId];
+
+            callbackHandler && callbackHandler.call(null, data);
+            delete this.callbackList[callbackId];
+        }
+
+        module.exports = new exec();
+        
+    });
+   
+
+    /**
+     * 初始化
+     */
+    define('tcbridge/init', function(require, exports, module) {
+
+        if (!window.console) {
+            window.console = {log: new Function};
+        }
+
+        doc.addEventListener('JsBridgeReady', function() {
+            win.TCBridge = require('tcbridge');
+        }, false);
+
+        // 注册自定义的bridgeReady事件
+        var evt = doc.createEvent('HTMLEvents');
+        evt.initEvent('JsBridgeReady', false, false);
+        
+
+        if (document.readyState == 'complete' || document.readyState == 'interactive') {
+            doc.dispatchEvent(evt);
+        } else {
+            document.addEventListener('DOMContentLoaded', function() {
+                doc.dispatchEvent(evt);
+            }, false);
+        }
+    });
+
+    /**
+     * 桥接模块
+     */
+    define('tcbridge', function(require, exports, module) {
+        var exec = require('tcbridge/exec');
+
+        module.exports = {
+            require: require,
+            define: define,
+            exec: exec
+        };
+    });
+
+    // 初始化
+    require('tcbridge/init');
+
+})(window, document);
