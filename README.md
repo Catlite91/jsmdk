@@ -64,13 +64,16 @@ SirM.alert('弹出我吧');
 7. swipeView: 视图切换(h5-to-native)
 
 	`swipeView(view[, extra])` 无返回值
-	view<String>: 视图对应的页面，映射关系需要android应用绑定
-	extra<Object>: 扩展数据，调用native需要额外传递的参数，类型为object, key/value不做限定，业务线自己根据需求自己拼装对象
+	
+	`view<String>`: 视图对应的页面，映射关系需要android应用绑定
+	
+	`extra<Object>`: 扩展数据，调用native需要额外传递的参数，类型为object, key/value不做限定，业务线自己根据需求自己拼装对象
 
 8. getNetworkType: 获取网络类型
 	
 	`getNetworkType()` return object | similar object string 上层业务获得Object
-	view<String>: 视图对应的页面，映射关系需要android应用绑定
+	
+	`view<String>`: 视图对应的页面，映射关系需要android应用绑定
 	
 		result<Object>:
 		isWifi<Boolean>: 是否是wifi环境
