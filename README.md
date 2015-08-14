@@ -7,10 +7,15 @@
 ## Example
 
 ```javascript
-// 调用对话框
+
+/**
+ * 调用对话框
+ */
 SirM.alert('弹出我吧');
 
-// 确认对话框
+/**
+ * 确认对话框
+ */
 SirM.confirm('确认对话框', function(result) {
 	// 如果存在返回数据
 	if (data) {
@@ -24,14 +29,20 @@ SirM.confirm('确认对话框', function(result) {
 
 });
 
-// 消息提醒
+/**
+ * 消息提醒
+ */
 SirM.toast('消息提醒');
 SirM.toast('5秒之后退出消息框', 5);
 
-// 获取设备ID
+/**
+ * 获取设备ID
+ */
 console.log(SirM.getIMEI());
 
-// 获取系统信息
+/**
+ * 获取系统信息
+ */
 var client = SirM.getOS();
 
 if (client.os === 'andriod') {
@@ -40,15 +51,18 @@ if (client.os === 'andriod') {
 	render('苹果AppStore二维码');
 }
 
-// 闭当前页面或回到上个页面
+/**
+ * 闭当前页面或回到上个页面
+ */
 button.on('click', function() {
 	// form.submit();
 	// 关闭当前页面|回到上个页面
 	SirM.finish();
 })
 
-// 切换视图
-
+/**
+ * 切换视图
+ */
 //去老师详情页
 button.on('click', function() {
 	var tId = this.attr('teacherId'),
@@ -60,8 +74,9 @@ button.on('click', function() {
 	});
 })
 
-// 调用对话框
-
+/**
+ * 判断网络类型
+ */
 button.on('click', function() {
 	var netType = SirM.getNetworkType('弹出我吧');
 	if (netType.hasOwnProperty('isWifi') && netType.isWifi) {
