@@ -7,14 +7,13 @@
 
 ### Description
 	
-	hybrid app 前端工具箱
+hybrid app 前端工具箱
+* 工具箱涵盖了andriod版本和ios版本
+* 客户端请在本地载入jdk文件, `build>sirm-android-min.js`, 如果IOS无法在本地载入该文件, 请h5相关的前端开发人员通过\<script\>标签载入, 版本请参考#Version, 具体地址为：
 
-	* 工具箱涵盖了andriod版本和ios版本
-	* 客户端请在本地载入jdk文件, `build>sirm-android-min.js`, 如果IOS无法在本地载入该文件, 请h5相关的前端开发人员通过\<script\>标签载入, 版本请参考#Version, 具体地址为：
+	http://`{domain}`/jsmdk/`{version}`/build/sirm-`{os}`-min.js
 
-		http://`{domain}`/jsmdk/`{version}`/build/sirm-`{os}`-min.js
-
-		请替换`{domain}`为线上环境:`s1.laoshilaile.cn/assets-ls`,测试环境: `192.168.1.204:8081` `{version}`为对应的版本号,`{os}`为对应系统名称
+	请替换`{domain}`为线上环境:`s1.laoshilaile.cn/assets-ls`,测试环境: `192.168.1.204:8081` `{version}`为对应的版本号,`{os}`为对应系统名称
 	
 ## Example
 
