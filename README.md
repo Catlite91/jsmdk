@@ -31,7 +31,7 @@ SirM.alert('弹出我吧');
 	
 	`callback<Function>`: 执行操作后的回调函数，result中包含操作结果
 	
-	`callback return<Object>`:
+	`callback RETURN<Object>`:
 
 		isConfirm<Boolean>: 是否确认，true表示确认，false表示取消
 		data<Array>: 返回的数据，非必须
@@ -48,15 +48,13 @@ SirM.alert('弹出我吧');
 
 4. getIMEI: 获取设备Id
 
-	`return<Number>`: 
+	`RETURN <Number>`: 
 
 		返回设备Id给业务层，会对native端返回的类型做强制转化为Number 
 
 5. getOS: 获取系统信息
 
-	`getOS()`: return object
-	
-	`return<Object>`: 
+	`RETURN <Object>`: 
 
 		os<String>: andriod | ios
 		version<Number>: android(2.2~4.4) | ios(6.0~9.4) 返回具体的版本号，会对native端返回的字符串或浮点型做强制转化为float给上层应用
@@ -79,8 +77,8 @@ SirM.alert('弹出我吧');
 	
 	`view<String>`: 视图对应的页面，映射关系需要android应用绑定
 	
-	`return <Object>`:
-	
+	`RETURN <Object>`:
+
 		isWifi<Boolean>: 是否是wifi环境
 		type<String>: 值可能的类型包括'4G','3G','2G','GPRS','Wifi','DSL'等
 
