@@ -9,6 +9,66 @@
 ```javascript
 // 调用对话框
 SirM.alert('弹出我吧');
+
+// 确认对话框
+SirM.confirm('确认对话框', function(result) {
+	// 如果存在返回数据
+	if (data) {
+		// 数据处理
+	}
+	if (result.isConfirm) {
+		// 确认之后做什么事情
+	} else {
+		// 取消之后做什么事情
+	}
+
+});
+
+// 消息提醒
+SirM.toast('消息提醒');
+SirM.toast('5秒之后退出消息框', 5);
+
+// 获取设备ID
+console.log(SirM.getIMEI());
+
+// 获取系统信息
+var client = SirM.getOS();
+
+if (client.os === 'andriod') {
+	render('安卓下载二维码')
+} else if (client.os === 'ios') {
+	render('苹果AppStore二维码');
+}
+
+// 闭当前页面或回到上个页面
+button.on('click', function() {
+	// form.submit();
+	// 关闭当前页面|回到上个页面
+	SirM.finish();
+})
+
+// 切换视图
+
+//去老师详情页
+button.on('click', function() {
+	var tId = this.attr('teacherId'),
+		_token_ = this.form._token_.value;
+
+	SirM.swipeView('teacherView', {
+		teacherId: tId,
+		token: _token_
+	});
+})
+
+// 调用对话框
+
+button.on('click', function() {
+	var netType = SirM.getNetworkType('弹出我吧');
+	if (netType.hasOwnProperty('isWifi') && netType.isWifi) {
+		// download apk
+	}
+})
+
 ```
 
 ## API
@@ -34,7 +94,7 @@ SirM.alert('弹出我吧');
 	`callback RETURN<Object>`:
 
 		isConfirm<Boolean>: 是否确认，true表示确认，false表示取消
-		data<Array>: 返回的数据，非必须
+		data<String|Array|Object>: 返回的数据，非必须
 		
 
 3. toast: 提醒信息，淡入淡出效果
