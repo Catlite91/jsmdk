@@ -80,6 +80,7 @@ SirM.alert('弹出我吧');
 	`view<String>`: 视图对应的页面，映射关系需要android应用绑定
 	
 	`return <Object>`:
+	
 		isWifi<Boolean>: 是否是wifi环境
 		type<String>: 值可能的类型包括'4G','3G','2G','GPRS','Wifi','DSL'等
 
