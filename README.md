@@ -13,9 +13,10 @@ SirM.alert('弹出我吧');
 
 ## API
 1. alert: 消息确认框
-```
-	`|` alert(')
-```
+
+`alert(msg<string>)`
+
+`msg`: String
 
 2. confirm: 对话框
 
