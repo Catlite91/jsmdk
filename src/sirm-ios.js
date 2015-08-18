@@ -75,7 +75,7 @@
     define('tcbridge/exec', function(require, exports, module) {
         var exec = function() {
             this.callbackList = {};
-        }
+        };
 
         exec.prototype.jsToNative = function(evt, params, callback) {
             if (typeof evt != 'string') {
@@ -99,11 +99,11 @@
                 callbackId: callbackId,
                 action: evt,
                 data: params || {}
-            }
+            };
             var iOS_SCHEME = "jsbridge://";
 
             win.location.href = iOS_SCHEME + JSON.stringify(msg);
-        }
+        };
 
         exec.prototype.nativeToJs = function(params) {
             var callbackId = params.callbackId,
@@ -112,7 +112,7 @@
 
             callbackHandler && callbackHandler.call(null, data);
             delete this.callbackList[callbackId];
-        }
+        };
 
         module.exports = new exec();
         
@@ -129,7 +129,8 @@
         }
 
         doc.addEventListener('JsBridgeReady', function() {
-            win.TCBridge = require('tcbridge');
+            //win.TCBridge = require('tcbridge');
+            win.SirM = require('sirMBridge').sirM;
         }, false);
 
         // 注册自定义的bridgeReady事件
@@ -149,13 +150,46 @@
     /**
      * 桥接模块
      */
-    define('tcbridge', function(require, exports, module) {
+    //define('tcbridge', function(require, exports, module) {
+    //    var exec = require('tcbridge/exec');
+    //
+    //    module.exports = {
+    //        require: require,
+    //        define: define,
+    //        exec: exec
+    //    };
+    //});
+
+    /**
+     * 自定义桥接模块
+     */
+    define('sirMBridge', function(require, exports, module){
+        var funcNames = [
+            'alert', 'toast', 'getIMEI', 'getOsSdk', 'finish', 'getNetworkType', 'swipeView', 'confirm'
+        ];
         var exec = require('tcbridge/exec');
+        var sirM = {
+            __data: [],
+            __callback: function(data){
+                this.__data = data;
+            }
+        };
+
+        // 注册方法
+        funcNames.forEach(function(funName){
+            sirM[funName] = function(){
+                var params = Array.prototype.slice.call(arguments, 0),
+                    evt = '',
+                    callback = sirM.__callback.bind(sirM);
+                exec.jsToNative(evt, params, callback);
+                return sirM.__data;
+            }
+        });
 
         module.exports = {
             require: require,
             define: define,
-            exec: exec
+            sirM: sirM
         };
     });
 
