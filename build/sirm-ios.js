@@ -1,21 +1,17 @@
-;(function (win, doc) {    
+;
+(function (win, doc) {
     var modules = {},
         define,
         require;
-    
-    // 构造模块加载器
-    // 一定程度上遵从amd规范
-    (function() {
-            // 当前正在构造的moduleIds的堆栈信息
-            requireStack = [],
-            // module ID的映射 -> 当前正在构建的模块的堆栈映射的索引
+
+    (function () {
+        var requireStack = [],
             inProgressModules = {},
             SEPARATOR = ".";
 
-        // 构建模块
         function build(module) {
             var factory = module.factory,
-                localRequire = function(id) {
+                localRequire = function (id) {
                     var resultantId = id;
                     //Its a relative path, so lop off the last portion and add the id (minus "./")
                     if (id.charAt(0) === ".") {
@@ -28,8 +24,8 @@
             factory(localRequire, module.exports, module);
             return module.exports;
         }
-         
-        define = function(id, factory) {
+
+        define = function (id, factory) {
             if (modules[id]) {
                 throw "module " + id + " already defined";
             }
@@ -40,12 +36,12 @@
             };
         };
 
-        require = function(id) {
+        require = function (id) {
             if (!modules[id]) {
                 throw "module " + id + " not found";
             } else if (id in inProgressModules) {
                 var cycle = requireStack.slice(inProgressModules[id]).join('->') + '->' + id;
-                throw "require的生命周期视图: " + cycle;
+                throw "require's life circle: " + cycle;
             }
             if (modules[id].factory) {
                 try {
@@ -60,7 +56,7 @@
             return modules[id].exports;
         };
 
-        define.remove = function(id) {
+        define.remove = function (id) {
             delete modules[id];
         };
 
@@ -68,121 +64,127 @@
 
     })();
 
-
-    /**
-     * 执行调用(js -> native, native -> js)
-     */
-    define('tcbridge/exec', function(require, exports, module) {
-        var exec = function() {
+    // js to native, native to js
+    define('tcbridge/exec', function (require, exports, module) {
+        var instance;
+        var exec = function () {
             this.callbackList = {};
         };
 
-        exec.prototype.jsToNative = function(evt, params, callback) {
-            if (typeof evt != 'string') {
-                return;
+        this.gitInstance = function () {
+            if (!instance) {
+                instance = new exec();
             }
+            return instance;
+        };
 
-            if (typeof params == 'function') {
-                callback = params;
-                params = null;
-            } else if (typeof params != 'object') {
-                params = null;
-            }
-
+        exec.prototype.jsToNative = function (config) {
+            config.callback = config.callback || new Function;
             var callbackId = new Date().getTime() + Math.floor(Math.random() * 256).toString(16);
-
-            if (typeof callback == 'function') {
-                this.callbackList[callbackId] = callback;
+            if (typeof config.callback === 'function') {
+                this.callbackList[callbackId] = config.callback;
             }
-
+            console.log(callbackId);
             var msg = {
                 callbackId: callbackId,
-                action: evt,
-                data: params || {}
+                argTypes: config.types,
+                args: config.args
             };
-            var iOS_SCHEME = "jsbridge://";
-
-            win.location.href = iOS_SCHEME + JSON.stringify(msg);
+            win.location.href = "js://" + config.method + '/?json=' + JSON.stringify(msg);
         };
 
-        exec.prototype.nativeToJs = function(params) {
-            var callbackId = params.callbackId,
-                data = params.data,
+        // ios will return the request result from this function
+        exec.prototype.nativeToJs = function (reqData, rstData) {
+            var callbackId = reqData.callbackId,
+            // trans the magic number to local javascript callback function
                 callbackHandler = this.callbackList[callbackId];
-
-            callbackHandler && callbackHandler.call(null, data);
-            delete this.callbackList[callbackId];
+            for (var item in  reqData.data) {
+                // trans the magic number to local javascript function params
+                for (var i = 0; i < reqData.length; i++) {
+                    if (reqData.types[i] === 'functioin') {
+                        reqData.args[i] = win.SirM.queue[reqData.args[i]];
+                    }
+                }
+            }
+            callbackHandler && callbackHandler.call(null, reqData, rstData);
+            // TODO at the end of the request, delete it manually
+            // if some Async code include in the callback function?
+            //delete this.callbackList[callbackId];
         };
 
-        module.exports = new exec();
-        
+        module.exports = this.gitInstance();
+
     });
-   
 
-    /**
-     * 初始化
-     */
-    define('tcbridge/init', function(require, exports, module) {
 
-        if (!window.console) {
-            window.console = {log: new Function};
+    // entry module
+    define('tcbridge/init', function (require, exports, module) {
+        if (!win.console) {
+            win.console = {log: new Function};
         }
-
-        doc.addEventListener('JsBridgeReady', function() {
-            //win.TCBridge = require('tcbridge');
+        doc.addEventListener('JsBridgeReady', function () {
             win.SirM = require('sirMBridge').sirM;
         }, false);
 
-        // 注册自定义的bridgeReady事件
+        // define 'JsBridgeReady' event
         var evt = doc.createEvent('HTMLEvents');
         evt.initEvent('JsBridgeReady', false, false);
-        
 
-        if (document.readyState == 'complete' || document.readyState == 'interactive') {
+        if (doc.readyState == 'complete' || doc.readyState == 'interactive') {
             doc.dispatchEvent(evt);
         } else {
-            document.addEventListener('DOMContentLoaded', function() {
+            doc.addEventListener('DOMContentLoaded', function () {
                 doc.dispatchEvent(evt);
             }, false);
         }
+        //else if dom content is already loaded? TODO
     });
 
-    /**
-     * 桥接模块
-     */
-    //define('tcbridge', function(require, exports, module) {
-    //    var exec = require('tcbridge/exec');
-    //
-    //    module.exports = {
-    //        require: require,
-    //        define: define,
-    //        exec: exec
-    //    };
-    //});
-
-    /**
-     * 自定义桥接模块
-     */
-    define('sirMBridge', function(require, exports, module){
+    // defined bridge module
+    define('sirMBridge', function (require, exports, module) {
+        var exec = require('tcbridge/exec');
         var funcNames = [
             'alert', 'toast', 'getIMEI', 'getOsSdk', 'finish', 'getNetworkType', 'swipeView', 'confirm'
         ];
-        var exec = require('tcbridge/exec');
         var sirM = {
-            __data: [],
-            __callback: function(data){
-                this.__data = data;
-            }
+            queue: [],
+            // callback for ios native code
+            callback: exec.nativeToJs.bind(exec)
         };
 
-        // 注册方法
-        funcNames.forEach(function(funName){
-            sirM[funName] = function(){
-                var params = Array.prototype.slice.call(arguments, 0),
-                    evt = '',
-                    callback = sirM.__callback.bind(sirM);
-                exec.jsToNative(evt, params, callback);
-                return sirM.__data;
+        // SirM Method Register
+        // 1. The method is Asynchronized
+        // 2. The first arg will be parsed to a callback function while it's type equals "function"
+        // 3. define the first arg accurately a callback function will be the most current way
+        funcNames.forEach(function (funName) {
+            sirM[funName] = function () {
+                var method = funName,
+                    aTypes = [],
+                    args = Array.prototype.slice.call(arguments, 0),
+                    callback = typeof args[0] === 'function' ? args.shift() : new Function;
+
+                // local serialize
+                var arg, type, index;
+                for (var i = 0; i < args.length; i++) {
+                    arg = args[i];
+                    type = typeof arg;
+                    aTypes[aTypes.length] = type;
+                    if (type === "function") {
+                        // if function, trans to the number index of the SirM.queue
+                        index = sirM.queue.length;
+                        sirM.queue[index] = arg;
+                        args[i] = index;
+                    }
+                }
+
+                // send msg to native code
+                exec.jsToNative({
+                    // data should be a most simple object
+                    method: method,
+                    types: aTypes,
+                    args: args,
+                    callback: callback
+                });
             }
         });
 
@@ -193,7 +195,6 @@
         };
     });
 
-    // 初始化
     require('tcbridge/init');
 
 })(window, document);

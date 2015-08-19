@@ -18,6 +18,10 @@ hybrid app 前端工具箱
 ## Example
 
 ```javascript
+所有方法都是异步调用方式
+所有方法的第一个参数若为function, 则被视为回调函数  该参数不能为undefined或者null!!
+若参数不能确定, 一定要将第一个参数设成回调函数以免影响真实参数
+
 
 /**
  * 调用对话框
@@ -27,7 +31,7 @@ SirM.alert('弹出我吧');
 /**
  * 确认对话框
  */
-SirM.confirm('确认对话框', function(result) {
+SirM.confirm('确认对话框',function(result) {
 	// 如果存在返回数据
 	if (data) {
 		// 数据处理
@@ -37,7 +41,6 @@ SirM.confirm('确认对话框', function(result) {
 	} else {
 		// 取消之后做什么事情
 	}
-
 });
 
 /**
@@ -49,21 +52,20 @@ SirM.toast('5秒之后退出消息框', 5);
 /**
  * 获取设备ID
  */
-console.log(SirM.getIMEI());
+SirM.getIMEI(function(req, rst){
+	alert(rst)
+});
+
 
 /**
  * 获取系统信息
  */
-var client = SirM.getOS();
-
-if (client.os === 'andriod') {
-	render('安卓下载二维码')
-} else if (client.os === 'ios') {
-	render('苹果AppStore二维码');
-}
+SirM.getOS(function(){
+	alert(rst)
+});
 
 /**
- * 闭当前页面或回到上个页面
+ * 关闭当前页面或回到上个页面
  */
 button.on('click', function() {
 	// form.submit();
