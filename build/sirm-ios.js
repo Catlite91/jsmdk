@@ -13,7 +13,6 @@
             var factory = module.factory,
                 localRequire = function (id) {
                     var resultantId = id;
-                    //Its a relative path, so lop off the last portion and add the id (minus "./")
                     if (id.charAt(0) === ".") {
                         resultantId = module.id.slice(0, module.id.lastIndexOf(SEPARATOR)) + SEPARATOR + id.slice(2);
                     }
@@ -26,10 +25,6 @@
         }
 
         define = function (id, factory) {
-            if (modules[id]) {
-                throw "module " + id + " already defined";
-            }
-
             modules[id] = {
                 id: id,
                 factory: factory
@@ -37,12 +32,6 @@
         };
 
         require = function (id) {
-            if (!modules[id]) {
-                throw "module " + id + " not found";
-            } else if (id in inProgressModules) {
-                var cycle = requireStack.slice(inProgressModules[id]).join('->') + '->' + id;
-                throw "require's life circle: " + cycle;
-            }
             if (modules[id].factory) {
                 try {
                     inProgressModules[id] = requireStack.length;
@@ -65,63 +54,39 @@
     })();
 
     // js to native, native to js
-    define('tcbridge/exec', function (require, exports, module) {
-        var instance;
-        var exec = function () {
-            this.callbackList = {};
-        };
+    define('exec', function (require, exports, module) {
+        var jsToNative = function (config) {
+            var url = config.method;
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                    if (xhr.status == 200) {
+                        var result = xhr.responseText;
+                        try {
+                            result = JSON.parse(result);
+                            if (result.code == 200) {
+                                return result.result;
+                            }
+                        } catch (e) {
 
-        this.gitInstance = function () {
-            if (!instance) {
-                instance = new exec();
-            }
-            return instance;
-        };
-
-        exec.prototype.jsToNative = function (config) {
-            config.callback = config.callback || new Function;
-            var callbackId = new Date().getTime() + Math.floor(Math.random() * 256).toString(16);
-            if (typeof config.callback === 'function') {
-                this.callbackList[callbackId] = config.callback;
-            }
-            console.log(callbackId);
-            var msg = {
-                callbackId: callbackId,
-                argTypes: config.types,
-                args: config.args
-            };
-            win.location.href = "js://" + config.method + '/?json=' + JSON.stringify(msg);
-        };
-
-        // ios will return the request result from this function
-        exec.prototype.nativeToJs = function (reqData, rstData) {
-            var callbackId = reqData.callbackId,
-            // trans the magic number to local javascript callback function
-                callbackHandler = this.callbackList[callbackId];
-            for (var item in  reqData.data) {
-                // trans the magic number to local javascript function params
-                for (var i = 0; i < reqData.length; i++) {
-                    if (reqData.types[i] === 'functioin') {
-                        reqData.args[i] = win.SirM.queue[reqData.args[i]];
+                        }
+                        return result;
                     }
                 }
-            }
-            callbackHandler && callbackHandler.call(null, reqData, rstData);
-            // TODO at the end of the request, delete it manually
-            // if some Async code include in the callback function?
-            //delete this.callbackList[callbackId];
+            };
+            xhr.open("POST", url, false);
+            xhr.setRequestHeader("Content-Type", "text/plain");
+            xhr.setRequestHeader('ls-request', 'jsmdk');
+            xhr.send(JSON.stringify(config));
         };
-
-        module.exports = this.gitInstance();
-
+        module.exports = {
+            jsToNative: jsToNative
+        };
     });
 
 
     // entry module
-    define('tcbridge/init', function (require, exports, module) {
-        if (!win.console) {
-            win.console = {log: new Function};
-        }
+    define('init', function (require, exports, module) {
         doc.addEventListener('JsBridgeReady', function () {
             win.SirM = require('sirMBridge').sirM;
         }, false);
@@ -140,50 +105,74 @@
         //else if dom content is already loaded? TODO
     });
 
+    define('cbParser', function (require, exports, module) {
+        var instance;
+        var cbParser = function () {
+            this.callbackList = {};
+        };
+        cbParser.prototype.cbReplace = function (fn, args) {
+            var aTypes = fn.args || [],
+                callbackPosition = aTypes.indexOf('callback');
+
+            if (callbackPosition > -1) {
+                var callbackId = new Date().getTime() + Math.floor(Math.random() * 256).toString(16);
+                this.callbackList[callbackId] = args[callbackPosition] || new Function;
+                args[callbackPosition] = callbackId;
+            }
+            return args;
+        };
+        cbParser.prototype.cbCall = function (callbackId, rstData) {
+            var callbackHandler = this.callbackList[callbackId] || new Function;
+            try {
+                rstData = JSON.parse(rstData);
+            } catch (e) {
+            }
+            callbackHandler.call(null, rstData);
+            delete this.callbackList[callbackId];
+        };
+        this.getInstance = function () {
+            if (!instance) {
+                instance = new cbParser();
+            }
+            return instance;
+        };
+        module.exports = this.getInstance();
+    });
+
     // defined bridge module
     define('sirMBridge', function (require, exports, module) {
-        var exec = require('tcbridge/exec');
-        var funcNames = [
-            'alert', 'toast', 'getIMEI', 'getOsSdk', 'finish', 'getNetworkType', 'swipeView', 'confirm'
+        var register = [
+            {'name': 'alert', 'args': ['string']},
+            {'name': 'toast', 'args': ['string']},
+            {'name': 'getIMEI', 'return': ['string']},
+            {'name': 'getOs', 'return': ['json']},
+            {'name': 'finish'},
+            {'name': 'getNetworkType', 'return': ['string']},
+            {'name': 'swipeView', 'args': ['string', 'json'], 'return': ['boolean']},
+            {'name': 'confirm', 'args': ['string', 'callback'], 'callbackArgs': ['boolean']}
         ];
         var sirM = {
-            queue: [],
             // callback for ios native code
-            callback: exec.nativeToJs.bind(exec)
+            callback: function (callbackId, rstData) {
+                var cbParser = require('cbParser');
+                cbParser.cbCall.call(cbParser, callbackId, rstData);
+            },
+            exports: {
+                goBack: win.history.back
+            }
         };
-
-        // SirM Method Register
-        // 1. The method is Asynchronized
-        // 2. The first arg will be parsed to a callback function while it's type equals "function"
-        // 3. define the first arg accurately a callback function will be the most current way
-        funcNames.forEach(function (funName) {
-            sirM[funName] = function () {
-                var method = funName,
-                    aTypes = [],
-                    args = Array.prototype.slice.call(arguments, 0),
-                    callback = typeof args[0] === 'function' ? args.shift() : new Function;
-
-                // local serialize
-                var arg, type, index;
-                for (var i = 0; i < args.length; i++) {
-                    arg = args[i];
-                    type = typeof arg;
-                    aTypes[aTypes.length] = type;
-                    if (type === "function") {
-                        // if function, trans to the number index of the SirM.queue
-                        index = sirM.queue.length;
-                        sirM.queue[index] = arg;
-                        args[i] = index;
-                    }
-                }
-
+        register.forEach(function (fn) {
+            sirM[fn.name] = function () {
+                var aArgs = Array.prototype.slice.call(arguments, 0),
+                    cbParser = require('cbParser');
+                aArgs = cbParser.cbReplace.call(cbParser, fn, aArgs);
                 // send msg to native code
-                exec.jsToNative({
-                    // data should be a most simple object
-                    method: method,
-                    types: aTypes,
-                    args: args,
-                    callback: callback
+                return require('exec').jsToNative({
+                    method: fn.name,
+                    types: fn.args || [],
+                    args: aArgs,
+                    return: fn.return || [],
+                    callbackArgs: fn.callbackArgs || []
                 });
             }
         });
@@ -195,6 +184,6 @@
         };
     });
 
-    require('tcbridge/init');
+    require('init');
 
 })(window, document);
