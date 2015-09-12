@@ -13,7 +13,7 @@
             var factory = module.factory,
                 localRequire = function (id) {
                     var resultantId = id;
-                    if (id.charAt(0) === ".") {
+                    if (id.charAt(0) === SEPARATOR) {
                         resultantId = module.id.slice(0, module.id.lastIndexOf(SEPARATOR)) + SEPARATOR + id.slice(2);
                     }
                     return require(resultantId);
@@ -54,28 +54,29 @@
     })();
 
     // js to native, native to js
+    // using xmlHttpRequest for Sync
     define('exec', function (require, exports, module) {
         var jsToNative = function (config) {
-            var url = config.method;
-            var xhr = new XMLHttpRequest();
+            var url = config.method,
+                xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {
-                if (xhr.readyState == 4) {
-                    if (xhr.status == 200) {
-                        var result = xhr.responseText;
-                        try {
-                            result = JSON.parse(result);
-                            if (result.code == 200) {
-                                return result.result;
-                            }
-                        } catch (e) {
-
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    var result = xhr.responseText;
+                    try {
+                        result = JSON.parse(result);
+                        if (result.code == 200) {
+                            return result.result;
                         }
-                        return result;
+                    } catch (e) {
+
                     }
+                    return result;
                 }
             };
             xhr.open("POST", url, false);
             xhr.setRequestHeader("Content-Type", "text/plain");
+            // define customer request header
+            // so that IOS can recognize the request
             xhr.setRequestHeader('ls-request', 'jsmdk');
             xhr.send(JSON.stringify(config));
         };

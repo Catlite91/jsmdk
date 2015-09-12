@@ -13,7 +13,7 @@
             var factory = module.factory,
                 localRequire = function (id) {
                     var resultantId = id;
-                    if (id.charAt(0) === ".") {
+                    if (id.charAt(0) === SEPARATOR) {
                         resultantId = module.id.slice(0, module.id.lastIndexOf(SEPARATOR)) + SEPARATOR + id.slice(2);
                     }
                     return require(resultantId);

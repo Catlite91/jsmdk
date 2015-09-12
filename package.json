@@ -1,6 +1,6 @@
 {
   "name": "jsmdk",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "hybrid-app 前端开发js工具包",
   "main": "index.js",
   "scripts": {
@@ -11,10 +11,10 @@
     "url": "http://192.168.1.204/lsmobile/jsmdk.git"
   },
   "devDependencies": {
-    "gulp": "~3.8.1",
-    "gulp-rename": "1.2.0",
-    "gulp-native2ascii": "0.0.2",
-    "gulp-uglify": "0.3.0"
+    "gulp": "^3.8.1",
+    "gulp-rename": "^1.2.0",
+    "gulp-native2ascii": "^0.0.2",
+    "gulp-uglify": "^0.3.0"
   },
   "keywords": [
     "hybrid-js",
@@ -23,6 +23,6 @@
     "android2js",
     "ios2js"
   ],
-  "author": "pangtong.xt <pangtong@laoshilaile.com>",
+  "author": "xiongmao",
   "license": "MIT"
 }
