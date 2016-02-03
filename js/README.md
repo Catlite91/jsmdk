@@ -1,5 +1,9 @@
 ## Usage
-
+* install node
+* install gulp global
+* npm install
+* gulp
+* http://localhost:8093/test/test.html
 ### Version
 	
 	stable: 0.0.1
@@ -12,11 +16,7 @@ hybrid app 前端工具
 * 客户端请在本地载入js文件, 'build>index.bundle.min.js', 如果无法在本地载入该文件, 请通过'<script>'标签载入
 
 ## How to use
-* install node
-* install gulp global
-* npm install
-* gulp
-* http://localhost:8093/test/test.html
+
 
 ## Example
 * ./test/test.html
